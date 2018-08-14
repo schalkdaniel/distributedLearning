@@ -2,22 +2,34 @@
 output: github_document
 ---
 
+```{r, include=FALSE}
+knitr::opts_chunk$set(collapse = TRUE)
+```
+
 ## Create Test Datasets
 
-```{r}
+```{r, eval=FALSE}
 library(nycflights13)
 
-mydf = as.data.frame(flights)
+df.train = as.data.frame(flights)
+
+set.seed(314159)
+idx.test = sample(x = seq_len(nrow(df.train)), size = 0.1 * nrow(df.train))
+
+df.test  = df.train[idx.test, ]
+df.train = df.train[-idx.test, ]
 
 splits = 3L
+breaks = seq(1, nrow(df.train), length.out = splits + 1)
 
-breaks = seq(1, nrow(mydf), length.out = splits + 1)
-
+# Save single train sets:
 for (i in seq_len(splits)) {
-	temp = mydf[breaks[i]:breaks[i + 1], ]
+	temp = df.train[breaks[i]:breaks[i + 1], ]
 	write.csv(x = temp, file = paste0("data/flights", i, ".csv"), row.names = FALSE)
 }
 
+# Save test set:
+write.csv(x = df.test, file = "data/flights_test.csv")
 ```
 
 
@@ -33,8 +45,9 @@ myformula = formula(Petal.Length ~ Sepal.Length + Petal.Width)
 
 mybeta = lmGradientDescent(myformula, data = iris, iters = 10000L, learning_rate = 0.1,
 	mse_eps = 1e-9, trace = FALSE)
-
-data.frame(lm = coef(mod.lm), grad.descent = mybeta$beta, diff = coef(mod.lm) - mybeta$beta)
+```
+```{r, echo=FALSE}
+knitr::kable(data.frame(lm = coef(mod.lm), grad.descent = mybeta$beta, diff = coef(mod.lm) - mybeta$beta))
 ```
 
 ## Distributed Linear Model

@@ -4,6 +4,26 @@
 #                                                                                            #
 # ========================================================================================== #
 
+waitForDistributedStructure = function (iter, param.dir, final.update, wait.seconds = 1)
+{
+
+}
+
+waitForSuperModelDistributed = function (iter, param.dir)
+{
+
+}
+
+waitForTrainStructure = function (iter, param.dir, final.update, wait.seconds = 1)
+{
+
+}
+
+waitForSuperModelTrain = function ()
+{
+
+}
+
 #' Train a linear model using gradient descent
 #' 
 #' This function is just a wrapper around the \code{lmGradientDescent()} function written
@@ -26,7 +46,8 @@
 #'   Flag if the trace should be printed or not.
 #' @returns List of parameter vector, the final mse, and a flag if the algorithm was stopped
 #'   by the "epsilon criteria" or after the maximal iterations.
-distributedLinearModel = function (formula, param.dir, files, iters, mse_eps)
+initializeDistributedLinearModel = function (formula, param.dir, files, iters, mse_eps, 
+	structure = "Train", save.all = FALSE)
 {
 	# Check if files exists:
 	check.files = file.exists(files)
