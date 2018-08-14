@@ -11,7 +11,7 @@ knitr::opts_chunk$set(collapse = TRUE)
 ```{r, eval=FALSE}
 library(nycflights13)
 
-df.train = as.data.frame(flights)
+df.train = na.omit(as.data.frame(flights))
 
 set.seed(314159)
 idx.test = sample(x = seq_len(nrow(df.train)), size = 0.1 * nrow(df.train))
@@ -39,11 +39,12 @@ write.csv(x = df.test, file = "data/flights_test.csv")
 Rcpp::sourceCpp("src/gradient_descent.cpp")
 source("R/grad_descent_lm.R")
 
-myformula = formula(Petal.Length ~ Sepal.Length + Petal.Width)
+myformula = formula(arr_delay ~ month + air_time)
 
-(mod.lm = lm(myformula, data = iris))
+mod.lm = lm(myformula, data = df.train)
+summary(mod.lm)
 
-mybeta = lmGradientDescent(myformula, data = iris, iters = 10000L, learning_rate = 0.1,
+mybeta = lmGradientDescent(myformula, data = df.train, iters = 300000L, learning_rate = 0.001,
 	mse_eps = 1e-9, trace = FALSE)
 ```
 ```{r, echo=FALSE}
