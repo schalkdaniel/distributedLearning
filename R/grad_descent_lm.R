@@ -73,8 +73,12 @@ updateBeta = function (formula, data, learning_rate = 0.05, actual_beta, mse_eps
 	response = all.vars(formula)[attr(terms(formula, data = data), "response")]
 	X = model.matrix(formula, data = data)
 
+	XtX = t(X) %*% X
+	Xty = t(X) %*% data[[response]]
+
 	actual_mse = mean((data[[response]] - X %*% actual_beta)^2)
-	out = updateBeta_internal (X, data[[response]], t(X) %*% X, t(X) %*% data[[response]], 
+
+	out = updateBeta_internal (X, data[[response]], XtX, Xty, 
 		actual_beta, actual_mse, learning_rate, mse_eps, trace, warnings)
 
 	rownames(out$beta) = colnames(X)

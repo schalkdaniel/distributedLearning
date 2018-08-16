@@ -60,9 +60,9 @@ mybeta = lmGradientDescent(myformula, data = df.train, iters = 30000L, learning_
 
 |              |     lm | grad.descent |     diff |
 | ------------ | -----: | -----------: | -------: |
-| (Intercept)  | 2.3029 |       2.3006 |   0.0023 |
+| (Intercept)  | 2.3029 |       2.3008 |   0.0022 |
 | Petal.Length | 0.4688 |       0.4689 | \-0.0001 |
-| Sepal.Width  | 0.5773 |       0.5780 | \-0.0006 |
+| Sepal.Width  | 0.5773 |       0.5779 | \-0.0006 |
 
 ### Doing just one step
 
@@ -92,8 +92,8 @@ Initialize model:
 files = c("data/iris1.csv", "data/iris2.csv", "data/iris3.csv")
 myformula = formula(Sepal.Length ~ Petal.Length + Sepal.Width)
 
-initializeDistributedLinearModel(formula = myformula, out.dir = getwd(), files = files, epochs = 30000L, 
-    learning_rate = 0.01, mse_eps = 1e-10, file_reader = read.csv)
+initializeDistributedLinearModel(formula = myformula, out_dir = getwd(), files = files, epochs = 30000L, 
+    learning_rate = 0.01, mse_eps = 1e-10, file_reader = read.csv, overwrite = TRUE)
 ```
 
 We can have a look at the created registry:
@@ -111,7 +111,7 @@ registry
 ## [1] 1e-10
 ## 
 ## $actual_iteration
-## [1] 10000
+## [1] 0
 ## 
 ## $formula
 ## Sepal.Length ~ Petal.Length + Sepal.Width
@@ -121,22 +121,22 @@ registry
 ##     fill = TRUE, comment.char = "", ...) 
 ## read.table(file = file, header = header, sep = sep, quote = quote, 
 ##     dec = dec, fill = fill, comment.char = comment.char, ...)
-## <bytecode: 0x5611e0cb45c8>
+## <bytecode: 0x5610f243a108>
 ## <environment: namespace:utils>
 ## 
 ## $learning_rate
 ## [1] 0.01
+## 
+## $save_all
+## [1] FALSE
 
 load("train_files/model.rds")
 model
 ## $mse_average
-## [1] 0.1033
+## [1] 0
 ## 
 ## $done
 ## [1] FALSE
-## 
-## $beta
-## [1] 2.1788 0.4740 0.6116
 ```
 
 This file is permanent and holds all necessary data to coordinate the
@@ -148,10 +148,13 @@ sequentially:
 ``` r
 trainDistributedLinearModel(regis = "train_files")
 ## 
-## Entering iteration 10000
+## Entering iteration 0
 ##  Processing data/iris1.csv
 ##  Processing data/iris2.csv
 ##  Processing data/iris3.csv
+trainDistributedLinearModel(regis = "train_files")
+##   >> Calculate new beta which gives an mse of 3.34964493910099
+##   >> Removing train_files/iter0.rds
 
 load("train_files/registry.rds")
 registry
@@ -165,7 +168,7 @@ registry
 ## [1] 1e-10
 ## 
 ## $actual_iteration
-## [1] 10000
+## [1] 1
 ## 
 ## $formula
 ## Sepal.Length ~ Petal.Length + Sepal.Width
@@ -175,74 +178,62 @@ registry
 ##     fill = TRUE, comment.char = "", ...) 
 ## read.table(file = file, header = header, sep = sep, quote = quote, 
 ##     dec = dec, fill = fill, comment.char = comment.char, ...)
-## <bytecode: 0x5611e2621dc8>
+## <bytecode: 0x5610f227e358>
 ## <environment: namespace:utils>
 ## 
 ## $learning_rate
 ## [1] 0.01
+## 
+## $save_all
+## [1] FALSE
 
 load("train_files/model.rds")
 model
 ## $mse_average
-## [1] 0.1033
+## [1] 3.35
 ## 
 ## $done
 ## [1] FALSE
 ## 
 ## $beta
-## [1] 2.1788 0.4740 0.6116
+## [1] 0.8731 0.3683 0.5812
+```
 
-max_iters = 10000L
+We can now train the model until the stopping criteria hits, which is
+ether the maximal number of epochs or the relative improvement of the
+MSE is smaller then the specified epsilon 10^{-10}:
 
-while(registry[["actual_iteration"]] < max_iters) {
+``` r
+while(! model[["done"]]) {
     trainDistributedLinearModel(regis = "train_files", silent = TRUE)
-    load("train_files/registry.rds")
+    load("train_files/model.rds")
 }
+```
 
+We can have a final look on the estimated parameter by loading the final
+model:
+
+``` r
 load("train_files/registry.rds")
-registry
-## $file_names
-## [1] "data/iris1.csv" "data/iris2.csv" "data/iris3.csv"
-## 
-## $epochs
-## [1] 30000
-## 
-## $mse_eps
-## [1] 1e-10
-## 
-## $actual_iteration
-## [1] 10000
-## 
-## $formula
-## Sepal.Length ~ Petal.Length + Sepal.Width
-## 
-## $file_reader
-## function (file, header = TRUE, sep = ",", quote = "\"", dec = ".", 
-##     fill = TRUE, comment.char = "", ...) 
-## read.table(file = file, header = header, sep = sep, quote = quote, 
-##     dec = dec, fill = fill, comment.char = comment.char, ...)
-## <bytecode: 0x5611e120d390>
-## <environment: namespace:utils>
-## 
-## $learning_rate
-## [1] 0.01
+registry[["actual_iteration"]]
+## [1] 30001
 
 load("train_files/model.rds")
 model
 ## $mse_average
-## [1] 0.1033
+## [1] 0.1031
 ## 
 ## $done
-## [1] FALSE
+## [1] TRUE
 ## 
 ## $beta
-## [1] 2.1788 0.4740 0.6116
+## [1] 2.3131 0.4682 0.5751
 
-knitr::kable(data.frame(lm = coef(mod.lm), actual.step = model[["beta"]]))
+knitr::kable(data.frame(lm = coef(mod.lm), actual.step = model[["beta"]]), diff = coef(mod.lm) - model[["beta"]])
 ```
 
 |              |     lm | actual.step |
 | ------------ | -----: | ----------: |
-| (Intercept)  | 2.3029 |      2.1788 |
-| Petal.Length | 0.4688 |      0.4740 |
-| Sepal.Width  | 0.5773 |      0.6116 |
+| (Intercept)  | 2.3029 |      2.3131 |
+| Petal.Length | 0.4688 |      0.4682 |
+| Sepal.Width  | 0.5773 |      0.5751 |

@@ -4,45 +4,46 @@
 #                                                                                            #
 # ========================================================================================== #
 
-waitForTrain = function (iter, param.dir, files)
-{
-
-}
-
-waitForSuperModel = function (iter, param.dir, files)
-{
-
-}
-
-#' Train a linear model using gradient descent
+#' Initialize a Distributed Linear Model
 #' 
-#' This function is just a wrapper around the \code{lmGradientDescent()} function written
-#' in \code{C++}. 
+#' This function creates the files and file system required to train a linear model in a 
+#' distributed fashion.
 #' 
 #' @param formula [\code{formula}]\cr
 #'   Formula analog to the formula call in \code{lm}.
-#' @param data [\code{data.frame}]\cr
-#'   Data frame containing the data used for modeling.
+#' @param out_dir [\code{character(1)}]\cr
+#'   Direction for the output files.
+#' @param files [\code{character}]\cr
+#'   Vector of file destinations. Each element must point to one dataset.
 #' @param epochs [\code{integer(1)}]\cr
 #'   Number of maximal iterations. Could be less if the "epsilon criteria" is hit.
 #' @param learning_rate [\code{numeric(1)}]\cr
 #'   The step size used for gradient descent. Note: If the mse is not improving the step size
 #'   is shrinked by 20 percent.
-#' @param beta_init [\code{numeric}]\cr
-#'   Initial vector of coefficients used as starting point for the gradient descent.
 #' @param mse_eps [\code{numeric(1)}]\cr
 #'   Relativ improvement of the MSE. If this boundary is undershot, then the algorithm stops.
-#' @param trace [\code{logical(1)}]\cr
-#'   Flag if the trace should be printed or not.
+#' @param save_all [\code{logical(1)}]\cr
+#'   If set to TRUE, all updates are stored within the out_dir.
+#' @param file_reader [\code{function}]\cr
+#'   Function to read the datasets specified in files.
+#' @param overwrite [\code{logical(1)}]\cr
+#'   Flag to specify whether to overwrite an existing registry and model or not.
 #' @returns List of parameter vector, the final mse, and a flag if the algorithm was stopped
 #'   by the "epsilon criteria" or after the maximal iterations.
-initializeDistributedLinearModel = function (formula, out.dir = getwd(), files, epochs, learning_rate, 
-	mse_eps, structure = "Train", save_all = FALSE, file_reader)
+initializeDistributedLinearModel = function (formula, out_dir = getwd(), files, epochs, learning_rate, 
+	mse_eps, save_all = FALSE, file_reader, overwrite = FALSE)
 {
 	registry = list(file_names = files, epochs = epochs, mse_eps = mse_eps, actual_iteration = 0,
-		formula = formula, file_reader = file_reader, learning_rate = learning_rate)
+		formula = formula, file_reader = file_reader, learning_rate = learning_rate, save_all = FALSE)
 	
-	file_dir = paste0(out.dir, "/train_files")
+	file_dir = paste0(out_dir, "/train_files")
+	if (overwrite) {
+		if (dir.exists(file_dir)) { 
+			unlink(file_dir, recursive = TRUE) 
+		} else {
+			warning("Nothing to overwrite, ", file_dir, " does not exist.")
+		}
+	}
 	if (! dir.exists(file_dir)) {
 		dir.create(file_dir)
 	} else {
@@ -50,20 +51,20 @@ initializeDistributedLinearModel = function (formula, out.dir = getwd(), files, 
 	}
 	regis_dir = paste0(file_dir, "/registry.rds")
 	if (file.exists(regis_dir)) {
-		stop(file_dir, " already contains a registry.rds file. To overwrite this file remove it first.")
+		stop(file_dir, " already contains a registry.rds file. To overwrite this file remove it first or set 'overwrite = TRUE'.")
 	} else {
 		save(list = "registry", file = regis_dir)
 	}
 	model_dir = paste0(file_dir, "/model.rds")
 	if (file.exists(model_dir)) {
-		stop(model_dir, " already contains a model.rds file. To overwrite this file remove it first.")
+		stop(model_dir, " already contains a model.rds file. To overwrite this file remove it first or set 'overwrite = TRUE'.")
 	} else {
 		model = list(mse_average = 0, done = FALSE)
 		save(list = "model", file = model_dir)
 	}
 }
 
-trainDistributedLinearModel = function (regis_dir, silent = FALSE)
+trainDistributedLinearModel = function (regis_dir, silent = FALSE, epochs_at_once = 1L)
 {
 	load(file = paste0(regis_dir, "/registry.rds"))
 	load(file = paste0(regis_dir, "/model.rds"))
@@ -77,7 +78,7 @@ trainDistributedLinearModel = function (regis_dir, silent = FALSE)
 
 			if (! silent) message("\nEntering iteration ", actual_iteration, "\n")
 
-			snapshot = list()
+				snapshot = list()
 			save(list = "snapshot", file = actual_state)
 		} else {
 			load(file = actual_state)
@@ -92,17 +93,28 @@ trainDistributedLinearModel = function (regis_dir, silent = FALSE)
 			model[["beta"]] = model[["beta"]] + registry[["learning_rate"]] * final_gradient
 			model[["mse_average"]]  = mean(vapply(snapshot, FUN = function (x) { x[["mse"]] }, FUN.VALUE = numeric(1)))
 
-			if (! silent) message("  >> Calculate new beta which gives an mse of ", model[["mse_average"]], "\n")
+			if (! silent) message("  >> Calculate new beta which gives an mse of ", model[["mse_average"]])
+
+			if (registry[["actual_iteration"]] > 0) {
+				stop_algo = c(
+					registry[["actual_iteration"]] >= registry[["epochs"]],
+					((mse_old - model[["mse_average"]]) / mse_old) <= registry[["mse_eps"]]
+					)
+			} else {
+				stop_algo = FALSE
+			}
 
 			registry[["actual_iteration"]] = actual_iteration + 1
 
+			if (! registry[["save_all"]]) {
+				if (! silent) message("  >> Removing ", actual_state, "\n")
+					unlink(actual_state)
+			}
+
+			if (any(stop_algo)) { model[["done"]] = TRUE }
+
 			save(list = "model", file = paste0(regis_dir, "/model.rds"))
 			save(list = "registry", file = paste0(regis_dir, "/registry.rds"))
-
-			if ((registry[["actual_iteration"]] >= registry[["epochs"]]) || 
-				((mse_old - model[["mse_average"]]) / mse_old <= registry[["mse_eps"]])) {
-				model[["done"]] = TRUE
-			}
 
 		} else {
 			# If a file is missing do a gradient descent step and store the gradient:
@@ -111,7 +123,7 @@ trainDistributedLinearModel = function (regis_dir, silent = FALSE)
 
 				if (! silent) message("\tProcessing ", file)
 
-				data_in = registry[["file_reader"]](file)
+					data_in = registry[["file_reader"]](file)
 				X_helper = model.matrix(registry[["formula"]], data = data_in[1, ])
 				
 				# Initialize model the very first time:

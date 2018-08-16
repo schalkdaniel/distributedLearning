@@ -8,7 +8,7 @@ knitr::opts_chunk$set(collapse = TRUE)
 
 ## Create Test Datasets
 
-```{r, eval=FALSE}
+```{r}
 set.seed(314159)
 
 df.train = iris[sample(nrow(iris)), ]
@@ -70,12 +70,12 @@ source("R/distributed_lm.R")
 
 Initialize model:
 
-```{r, eval=FALSE}
+```{r}
 files = c("data/iris1.csv", "data/iris2.csv", "data/iris3.csv")
 myformula = formula(Sepal.Length ~ Petal.Length + Sepal.Width)
 
-initializeDistributedLinearModel(formula = myformula, out.dir = getwd(), files = files, epochs = 30000L, 
-	learning_rate = 0.01, mse_eps = 1e-10, file_reader = read.csv)
+initializeDistributedLinearModel(formula = myformula, out_dir = getwd(), files = files, epochs = 30000L, 
+	learning_rate = 0.01, mse_eps = 1e-10, file_reader = read.csv, overwrite = TRUE)
 ```
 
 We can have a look at the created registry:
@@ -93,25 +93,32 @@ Now we can train a linear model by loading the files specified in files sequenti
 
 ```{r}
 trainDistributedLinearModel(regis = "train_files")
+trainDistributedLinearModel(regis = "train_files")
 
 load("train_files/registry.rds")
 registry
 
 load("train_files/model.rds")
 model
+```
 
-max_iters = 10000L
+We can now train the model until the stopping criteria hits, which is ether the maximal number of epochs or the relative improvement of the MSE is smaller then the specified epsilon `r registry[["mse_eps"]]`: 
 
-while(registry[["actual_iteration"]] < max_iters) {
+```{r}
+while(! model[["done"]]) {
 	trainDistributedLinearModel(regis = "train_files", silent = TRUE)
-	load("train_files/registry.rds")
+	load("train_files/model.rds")
 }
+```
 
+We can have a final look on the estimated parameter by loading the final model:
+
+```{r}
 load("train_files/registry.rds")
-registry
+registry[["actual_iteration"]]
 
 load("train_files/model.rds")
 model
 
-knitr::kable(data.frame(lm = coef(mod.lm), actual.step = model[["beta"]]))
+knitr::kable(data.frame(lm = coef(mod.lm), actual.step = model[["beta"]]), diff = coef(mod.lm) - model[["beta"]])
 ```
