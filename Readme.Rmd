@@ -9,11 +9,9 @@ knitr::opts_chunk$set(collapse = TRUE)
 ## Create Test Datasets
 
 ```{r, eval=FALSE}
-library(nycflights13)
-
-df.train = na.omit(as.data.frame(flights))
-
 set.seed(314159)
+
+df.train = iris[sample(nrow(iris)), ]
 idx.test = sample(x = seq_len(nrow(df.train)), size = 0.1 * nrow(df.train))
 
 df.test  = df.train[idx.test, ]
@@ -23,13 +21,16 @@ splits = 3L
 breaks = seq(1, nrow(df.train), length.out = splits + 1)
 
 # Save single train sets:
+files = character(splits)
 for (i in seq_len(splits)) {
+	files[i] = paste0("data/iris", i, ".csv")
+
 	temp = df.train[breaks[i]:breaks[i + 1], ]
-	write.csv(x = temp, file = paste0("data/flights", i, ".csv"), row.names = FALSE)
+	write.csv(x = temp, file = files[i], row.names = FALSE)
 }
 
 # Save test set:
-write.csv(x = df.test, file = "data/flights_test.csv")
+write.csv(x = df.test, file = "data/iris_test.csv")
 ```
 
 
@@ -39,21 +40,78 @@ write.csv(x = df.test, file = "data/flights_test.csv")
 Rcpp::sourceCpp("src/gradient_descent.cpp")
 source("R/grad_descent_lm.R")
 
-myformula = formula(arr_delay ~ month + air_time)
+myformula = formula(Sepal.Length ~ Petal.Length + Sepal.Width)
 
 mod.lm = lm(myformula, data = df.train)
 summary(mod.lm)
 
-mybeta = lmGradientDescent(myformula, data = df.train, iters = 300000L, learning_rate = 0.001,
-	mse_eps = 1e-9, trace = FALSE)
+mybeta = lmGradientDescent(myformula, data = df.train, iters = 30000L, learning_rate = 0.01,
+	mse_eps = 1e-10, trace = FALSE)
 ```
 ```{r, echo=FALSE}
 knitr::kable(data.frame(lm = coef(mod.lm), grad.descent = mybeta$beta, diff = coef(mod.lm) - mybeta$beta))
 ```
 
+### Doing just one step
+
+```{r}
+actual_beta = coef(mod.lm) * 1.1
+mybeta = updateBeta (myformula, data = df.train, learning_rate = 0.01, actual_beta = actual_beta, 
+  mse_eps = 1e-10, trace = FALSE, warnings = FALSE)
+
+knitr::kable(data.frame(lm = coef(mod.lm), actual.step = actual_beta, after.step = mybeta$beta))
+```
+
 ## Distributed Linear Model
 
 ```{r}
-files = paste0("data/", c("flights1.csv", "flights2.csv", "flights3.csv"))
+source("R/distributed_lm.R")
+```
 
+Initialize model:
+
+```{r, eval=FALSE}
+files = c("data/iris1.csv", "data/iris2.csv", "data/iris3.csv")
+myformula = formula(Sepal.Length ~ Petal.Length + Sepal.Width)
+
+initializeDistributedLinearModel(formula = myformula, out.dir = getwd(), files = files, epochs = 30000L, 
+	learning_rate = 0.01, mse_eps = 1e-10, file_reader = read.csv)
+```
+
+We can have a look at the created registry:
+```{r}
+load("train_files/registry.rds")
+registry
+
+load("train_files/model.rds")
+model
+```
+
+This file is permanent and holds all necessary data to coordinate the fitting process of the train.
+
+Now we can train a linear model by loading the files specified in files sequentially:
+
+```{r}
+trainDistributedLinearModel(regis = "train_files")
+
+load("train_files/registry.rds")
+registry
+
+load("train_files/model.rds")
+model
+
+max_iters = 10000L
+
+while(registry[["actual_iteration"]] < max_iters) {
+	trainDistributedLinearModel(regis = "train_files", silent = TRUE)
+	load("train_files/registry.rds")
+}
+
+load("train_files/registry.rds")
+registry
+
+load("train_files/model.rds")
+model
+
+knitr::kable(data.frame(lm = coef(mod.lm), actual.step = model[["beta"]]))
 ```

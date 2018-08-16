@@ -4,17 +4,19 @@
 
 // [[Rcpp::export]]
 Rcpp::List updateBeta_internal (arma::mat& X, arma::colvec& y, arma::mat& XtX, arma::mat& Xty, 
-	arma::colvec& actual_beta, double& actual_mse, double& learning_rate, double& mse_eps, bool& trace)
+	arma::colvec& actual_beta, double& actual_mse, double& learning_rate, double& mse_eps, bool& trace,
+	bool& warnings)
 {
 	bool break_algo = false;
 	unsigned int n = X.n_rows;
 
-	arma::colvec beta_new = actual_beta + learning_rate * 2 * (Xty - XtX * actual_beta) / n;
+	arma::colvec grad = 2 * (Xty - XtX * actual_beta) / n;
+	arma::colvec beta_new = actual_beta + learning_rate * grad;
 	double mse_new = arma::accu(arma::pow(y - X * beta_new, 2)) / n;
 
 	double mse_improvement = (actual_mse - mse_new) / actual_mse;
 
-	if (mse_improvement < 0) {
+	if (mse_improvement < 0 && warnings) {
 		Rcpp::warning("Be careful, mse is not improving! Reducing the learning rate by 20 percent!");
 		learning_rate = learning_rate * 0.8;
 	}		
@@ -27,6 +29,7 @@ Rcpp::List updateBeta_internal (arma::mat& X, arma::colvec& y, arma::mat& XtX, a
 	}
 	return Rcpp::List::create(
 		Rcpp::Named("beta") = beta_new, 
+		Rcpp::Named("gradient") = grad,
 		Rcpp::Named("break_algo") = break_algo, 
 		Rcpp::Named("mse") = mse_new
 	);
@@ -52,11 +55,14 @@ Rcpp::List updateBeta_internal (arma::mat& X, arma::colvec& y, arma::mat& XtX, a
 //'   Relativ improvement of the MSE. If this boundary is undershot, then the algorithm stops.
 //' @param trace [\code{bool}]\cr
 //'   Flag if the trace should be printed or not.
+//' @param warnings [\code{bool}]\cr
+//'   Flag to specify if warnings should be printed or not.
 //' @returns List of parameter vector, the final mse, and a flag if the algorithm was stopped
 //'   by the "epsilon criteria" or after the maximal iterations.
 // [[Rcpp::export]]
 Rcpp::List lmGradientDescent_internal (arma::mat& X, arma::colvec& y, unsigned int iters = 100, 
-  double learning_rate = 0.05, arma::colvec beta_init = 0, double mse_eps = 0.00001, bool trace = false)
+  double learning_rate = 0.05, arma::colvec beta_init = 0, double mse_eps = 0.00001, bool trace = false,
+  bool warnings = false)
 {
 	arma::colvec beta_hat;
 	if (beta_init(0) == 0) {
@@ -74,7 +80,7 @@ Rcpp::List lmGradientDescent_internal (arma::mat& X, arma::colvec& y, unsigned i
 
 	for (unsigned int i = 0; i < iters; i++) {
 
-		steps = updateBeta_internal(X, y, XtX, Xty, beta_hat, mse_new, learning_rate, mse_eps, trace);
+		steps = updateBeta_internal(X, y, XtX, Xty, beta_hat, mse_new, learning_rate, mse_eps, trace, warnings);
 
 		beta_hat = Rcpp::as<arma::colvec>(steps["beta"]);
 		mse_new = Rcpp::as<double>(steps["mse"]);
