@@ -26,7 +26,7 @@
 #'   Flag if the trace should be printed or not.
 #' @param warnings [\code{logical(1)}]\cr
 #'   Flag to specify if warnings should be printed or not.
-#' @returns List of parameter vector, the final mse, and a flag if the algorithm was stopped
+#' @return List of parameter vector, the final mse, and a flag if the algorithm was stopped
 #'   by the "epsilon criteria" or after the maximal iterations.
 lmGradientDescent = function (formula, data, iters = 100L, learning_rate = 0.05, beta_init = NULL, 
 	mse_eps = 1e-6, trace = FALSE, warnings = FALSE)
@@ -65,7 +65,7 @@ lmGradientDescent = function (formula, data, iters = 100L, learning_rate = 0.05,
 #'   Flag if the trace should be printed or not.
 #' @param warnings [\code{logical(1)}]\cr
 #'   Flag to specify if warnings should be printed or not.
-#' @returns List of parameter vector, the final mse, and a flag if the algorithm was stopped
+#' @return List of parameter vector, the final mse, and a flag if the algorithm was stopped
 #'   by the "epsilon criteria" or after the maximal iterations.
 updateBeta = function (formula, data, learning_rate = 0.05, actual_beta, mse_eps, 
 	trace = FALSE, warnings = FALSE)

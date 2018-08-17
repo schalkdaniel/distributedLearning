@@ -28,7 +28,7 @@
 #'   Function to read the datasets specified in files.
 #' @param overwrite [\code{logical(1)}]\cr
 #'   Flag to specify whether to overwrite an existing registry and model or not.
-#' @returns List of parameter vector, the final mse, and a flag if the algorithm was stopped
+#' @return List of parameter vector, the final mse, and a flag if the algorithm was stopped
 #'   by the "epsilon criteria" or after the maximal iterations.
 initializeDistributedLinearModel = function (formula, out_dir = getwd(), files, epochs, learning_rate, 
 	mse_eps, save_all = FALSE, file_reader, overwrite = FALSE)

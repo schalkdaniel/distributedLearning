@@ -34,12 +34,37 @@ write.csv(x = df.test, file = "data/iris_test.csv")
 ```
 
 
-## Run Gradient Descent
+## Run Gradient Descent 
+
+First of all, load the package using `devtools`:
 
 ```{r}
-Rcpp::sourceCpp("src/gradient_descent.cpp")
-source("R/grad_descent_lm.R")
+devtools::load_all()
+```
 
+In the next step we create an `Model` object to specify which model we want to fit using a specific optimizer:
+
+```{r}
+X = cbind(1, 1:10)
+y = 1:10
+
+lin.mod = LinearModel$new(X, y)
+lin.mod
+
+lin.mod$calculateMSE(1:2)
+
+( lin.mod.ptr = useLinearModel(X, y) )
+testLinearModel(lin.mod.ptr, c(1,2))
+lin.mod.ptr
+
+gc()
+
+lin.mod.ptr
+testLinearModel(lin.mod.ptr, c(1,2))
+```
+
+
+```{r}
 myformula = formula(Sepal.Length ~ Petal.Length + Sepal.Width)
 
 mod.lm = lm(myformula, data = df.train)

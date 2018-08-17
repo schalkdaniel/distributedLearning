@@ -1,0 +1,25 @@
+Package: distMod
+Type: Package
+Title: Train models in a distributed/federated fashion
+Version: 0.1
+Authors@R: person("Daniel", "Schalk", email = "daniel.schalk@stat.uni-muenchen.de", role = c("aut", "cre"))
+Maintainer: Daniel Schalk <daniel.schalk@stat.uni-muenchen.de>
+Description: R implementation of distributed/federated learning. The models can be defined as classes (see models.cpp
+  for an example using the linear model). In addition this package includes different optimizer which can be used within
+  any model. This makes this package interesting for researchers since it is possible to combine different models with
+  different optimizer.
+License: MIT + file LICENSE
+Encoding: UTF-8
+LazyData: true
+RoxygenNote: 6.0.1
+Imports:
+	methods,
+  Rcpp,
+  RcppArmadillo
+LinkingTo:
+  Rcpp,
+  RcppArmadillo
+Suggests:
+  testthat,
+  knitr
+VignetteBuilder: knitr
