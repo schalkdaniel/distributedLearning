@@ -8,17 +8,17 @@ private:
 
 public:
 	Test (double x, double y) : x ( x ), y ( y ) {};
-	double getXtimesY () { return x * y; };
+  double getXtimesY () { return x * y; };
 
 	double getX () const { return x; };
-	double getY () const { return y; };
+  double getY () const { return y; };
 };
 
-  // non-intrusive extension via template specialisation
-  template <> Test Rcpp::as(SEXP mytest);
-  //
-  // non-intrusive extension via template specialisation
-  template <> SEXP Rcpp::wrap(const Test& test);
+// non-intrusive extension via template specialisation
+template <> Test Rcpp::as(SEXP mytest);
+
+// non-intrusive extension via template specialisation
+template <> SEXP Rcpp::wrap(const Test& test);
 
 #include <Rcpp.h>
 

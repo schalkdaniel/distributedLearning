@@ -11,6 +11,8 @@
 #' 
 #' @param formula [\code{formula}]\cr
 #'   Formula analog to the formula call in \code{lm}.
+#' @param model
+#' @param optimizer
 #' @param out_dir [\code{character(1)}]\cr
 #'   Direction for the output files.
 #' @param files [\code{character}]\cr
@@ -30,10 +32,10 @@
 #'   Flag to specify whether to overwrite an existing registry and model or not.
 #' @return List of parameter vector, the final mse, and a flag if the algorithm was stopped
 #'   by the "epsilon criteria" or after the maximal iterations.
-initializeDistributedLinearModel = function (formula, out_dir = getwd(), files, epochs, learning_rate, 
-	mse_eps, save_all = FALSE, file_reader, overwrite = FALSE)
+initializeDistributedModel = function (formula, model = "LinearModel", optimizer = "gradientDescent", out_dir = getwd(), 
+	files, epochs, learning_rate, mse_eps, save_all = FALSE, file_reader, overwrite = FALSE)
 {
-	registry = list(file_names = files, epochs = epochs, mse_eps = mse_eps, actual_iteration = 0,
+	registry = list(file_names = files, model = model, optimizer = optimizer, epochs = epochs, mse_eps = mse_eps, actual_iteration = 0,
 		formula = formula, file_reader = file_reader, learning_rate = learning_rate, save_all = FALSE)
 	
 	file_dir = paste0(out_dir, "/train_files")
@@ -64,7 +66,7 @@ initializeDistributedLinearModel = function (formula, out_dir = getwd(), files, 
 	}
 }
 
-trainDistributedLinearModel = function (regis_dir, silent = FALSE, epochs_at_once = 1L)
+trainDistributedModel = function (regis_dir, silent = FALSE, epochs_at_once = 1L, ...)
 {
 	load(file = paste0(regis_dir, "/registry.rds"))
 	load(file = paste0(regis_dir, "/model.rds"))
@@ -89,7 +91,7 @@ trainDistributedLinearModel = function (regis_dir, silent = FALSE, epochs_at_onc
 
 			mse_old = model[["mse_average"]]
 
-			final_gradient = rowMeans(as.data.frame(lapply(snapshot, function (x) x[["gradient"]])))
+			final_gradient = rowMeans(as.data.frame(lapply(snapshot, function (x) x[["update_cum"]])))
 			model[["beta"]] = model[["beta"]] + registry[["learning_rate"]] * final_gradient
 			model[["mse_average"]]  = mean(vapply(snapshot, FUN = function (x) { x[["mse"]] }, FUN.VALUE = numeric(1)))
 
@@ -121,10 +123,11 @@ trainDistributedLinearModel = function (regis_dir, silent = FALSE, epochs_at_onc
 			which_files_exists = file.exists(registry[["file_names"]]) 
 			for (file in registry[["file_names"]][which_files_exists]) {
 
-				if (! silent) message("\tProcessing ", file)
+				if (! silent) { message("\tProcessing ", file) }
 
-					data_in = registry[["file_reader"]](file)
-				X_helper = model.matrix(registry[["formula"]], data = data_in[1, ])
+				data_in = registry[["file_reader"]](file)
+				response = all.vars(registry[["formula"]])[attr(terms(registry[["formula"]], data = data_in), "response")]
+				X_helper = model.matrix(registry[["formula"]], data = data_in)
 				
 				# Initialize model the very first time:
 				if (! "beta" %in% names(model)) {
@@ -132,9 +135,10 @@ trainDistributedLinearModel = function (regis_dir, silent = FALSE, epochs_at_onc
 					save(list = "model", file = paste0(regis_dir, "/model.rds"))
 				}
 				# Do a gradient descent step on the single dataset:
-				snapshot[[file]] = updateBeta (registry[["formula"]], data = data_in, learning_rate = registry[["learning_rate"]], 
-					actual_beta = model[["beta"]], mse_eps = registry[["mse_eps"]], trace = FALSE, warnings = FALSE)
-
+				model_temp = new(eval(parse(text = registry[["model"]])), X = X_helper, y = data_in[[response]])
+				optimizer.fun = eval(parse(text = registry[["optimizer"]]))
+				snapshot[[file]] = optimizer.fun(mod = model_temp, param_start = model[["beta"]], learning_rate = registry[["learning_rate"]], 
+  				iters_at_once = 1L, trace = FALSE, warnings = FALSE)
 			}
 			save(list = "snapshot", file = actual_state)
 		}

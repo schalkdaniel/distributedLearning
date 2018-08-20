@@ -6,30 +6,6 @@
 
 using namespace Rcpp;
 
-// useLinearModel
-SEXP useLinearModel(arma::mat& X, arma::colvec& y);
-RcppExport SEXP _distMod_useLinearModel(SEXP XSEXP, SEXP ySEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< arma::mat& >::type X(XSEXP);
-    Rcpp::traits::input_parameter< arma::colvec& >::type y(ySEXP);
-    rcpp_result_gen = Rcpp::wrap(useLinearModel(X, y));
-    return rcpp_result_gen;
-END_RCPP
-}
-// testLinearModel
-double testLinearModel(SEXP& modelptr, arma::colvec& beta);
-RcppExport SEXP _distMod_testLinearModel(SEXP modelptrSEXP, SEXP betaSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< SEXP& >::type modelptr(modelptrSEXP);
-    Rcpp::traits::input_parameter< arma::colvec& >::type beta(betaSEXP);
-    rcpp_result_gen = Rcpp::wrap(testLinearModel(modelptr, beta));
-    return rcpp_result_gen;
-END_RCPP
-}
 // doSomethingWithTest
 double doSomethingWithTest(SEXP test);
 RcppExport SEXP _distMod_doSomethingWithTest(SEXP testSEXP) {
@@ -57,8 +33,6 @@ END_RCPP
 RcppExport SEXP _rcpp_module_boot_models();
 
 static const R_CallMethodDef CallEntries[] = {
-    {"_distMod_useLinearModel", (DL_FUNC) &_distMod_useLinearModel, 2},
-    {"_distMod_testLinearModel", (DL_FUNC) &_distMod_testLinearModel, 2},
     {"_distMod_doSomethingWithTest", (DL_FUNC) &_distMod_doSomethingWithTest, 1},
     {"_distMod_getTest", (DL_FUNC) &_distMod_getTest, 2},
     {"_rcpp_module_boot_models", (DL_FUNC) &_rcpp_module_boot_models, 0},

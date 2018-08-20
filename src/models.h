@@ -1,48 +1,44 @@
 #ifndef MODEL_H_
 #define MODEL_H_
 
+#include <iostream>
+
 // [[Rcpp::depends(RcppArmadillo)]]
 #include <RcppArmadillo.h>
 
+namespace model
+{
 // Abstract parent class:
 class Model
 {
 public:
-	virtual arma::colvec calculateGradient (arma::colvec& param) const = 0;
-	virtual double calculateMSE (arma::colvec& param) const = 0;
+	virtual arma::colvec calculateGradient (arma::colvec&) const = 0;
+	virtual double calculateMSE (arma::colvec&) const = 0;
+	virtual arma::colvec predict (arma::mat&) const = 0;
+	virtual arma::colvec predict () const = 0;
 
-  virtual ~Model ()
-	{
-		std::cout << "Destroy Model" << std::endl;
-	}
+	arma::colvec getParameter () const;
+	arma::colvec setParameter (arma::colvec&);
+
+  virtual ~Model ();
+
+protected:
+	arma::colvec parameter;
 };
+
 
 // Linear Model class:
 class LinearModel : public Model
 {
 public:
 
-	LinearModel (arma::mat X, arma::colvec y) : X(X), y(y)
-	{
-		arma::mat temp = X.t();
+	LinearModel (arma::mat, arma::colvec);
+	~LinearModel ();
 
-		XtX = temp * X;
-		Xty = temp * y;
-	};
-
-	~LinearModel ()
-	{
-		std::cout << "Destroy Linear Model" << std::endl;
-	}
-
-	arma::colvec calculateGradient (arma::colvec& param) const
-	{
-		return (2 * (Xty - XtX * param) / X.n_rows);
-	};
-	double calculateMSE (arma::colvec& param) const
-	{
-		return (arma::accu(arma::pow(y - X * param, 2)) / X.n_rows);
-	};
+	arma::colvec calculateGradient (arma::colvec&) const;
+	double calculateMSE (arma::colvec&) const;
+	arma::colvec predict (arma::mat&) const;
+	arma::colvec predict () const;
 
 private:
 	arma::mat X;
@@ -51,5 +47,7 @@ private:
 	arma::mat XtX;
 	arma::mat Xty;
 };
+
+} // namespace model
 
 #endif // MODEL_H_
