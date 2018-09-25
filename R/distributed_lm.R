@@ -92,7 +92,7 @@ trainDistributedModel = function (regis_dir, silent = FALSE, epochs_at_once = 1L
 			mse_old = model[["mse_average"]]
 
 			final_gradient = rowMeans(as.data.frame(lapply(snapshot, function (x) x[["update_cum"]])))
-			model[["beta"]] = model[["beta"]] + registry[["learning_rate"]] * final_gradient
+			model[["beta"]] = model[["beta"]] + final_gradient
 			model[["mse_average"]]  = mean(vapply(snapshot, FUN = function (x) { x[["mse"]] }, FUN.VALUE = numeric(1)))
 
 			if (! silent) message("  >> Calculate new beta which gives an mse of ", model[["mse_average"]])
@@ -138,7 +138,7 @@ trainDistributedModel = function (regis_dir, silent = FALSE, epochs_at_once = 1L
 				model_temp = new(eval(parse(text = registry[["model"]])), X = X_helper, y = data_in[[response]])
 				optimizer.fun = eval(parse(text = registry[["optimizer"]]))
 				snapshot[[file]] = optimizer.fun(mod = model_temp, param_start = model[["beta"]], learning_rate = registry[["learning_rate"]], 
-  				iters_at_once = 1L, trace = FALSE, warnings = FALSE)
+  				iters = 1L, trace = FALSE, warnings = FALSE)
 			}
 			save(list = "snapshot", file = actual_state)
 		}

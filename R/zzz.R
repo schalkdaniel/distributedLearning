@@ -1,4 +1,4 @@
-#' @useDynLib distMod, .registration = TRUE
+#' @useDynLib distributedLearning, .registration = TRUE
 NULL
 
 #' @import methods

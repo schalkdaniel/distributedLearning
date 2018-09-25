@@ -23,16 +23,56 @@ public:
 };
 
 RCPP_EXPOSED_CLASS(ModelWrapper);
-// RCPP_EXPOSED_CLASS(LinearModelWrapper);
 
-Rcpp::List gradientDescentWrapper (ModelWrapper& mod, arma::colvec& param_start, double learning_rate = 0.01, 
-  unsigned int iters_at_once = 1, bool trace = false, bool warnings = false)
+//' Conduct Gradient Descent on a given model
+//' 
+//' This function applies the Gradient Descent algorithm to a specific model. 
+//' 
+//' @param model [\code{Model}]\cr
+//'   Pointer of the model we want to fit.
+//' @param param_start [\code{numeric}]\cr 
+//'   The initial parameter.
+//' @param learning_rate [\code{numeric(1)}]\cr 
+//'   Step size of the gradient updates.
+//' @param iters [\code{integer(1)}]\cr 
+//'   Number of iterations.
+//' @param trace [\code{logical(1)}]\cr 
+//'   Flag to specify whether to print the progress or not.
+//' @param warnings [\code{logical(1)}]\cr 
+//'   Flag to specify whether to print warnings or not.
+//' @return [\code{list}] List containing the parameter, the last update, the 
+//'   cumulated updates, and the actual MSE of the parameter.
+Rcpp::List gradientDescent (ModelWrapper& mod, arma::colvec& param_start, double learning_rate = 0.01, 
+  unsigned int iters = 1, bool trace = false, bool warnings = false)
 {
-  return gradientDescent(mod.my_model, param_start, learning_rate, iters_at_once, trace, warnings);
+  return optimizer::gradientDescent(mod.my_model, param_start, learning_rate, iters, trace, warnings);
 }
 
-
-// RCPP_EXPOSED_CLASS(GradientDescent);
+//' Conduct Momentum on a given model
+//' 
+//' This function applies the Momentum algorithm to a specific model. 
+//' 
+//' @param model [\code{Model}]\cr
+//'   Pointer of the model we want to fit.
+//' @param param_start [\code{numeric}]\cr 
+//'   The initial parameter.
+//' @param learning_rate [\code{numeric(1)}]\cr 
+//'   Step size of the gradient updates.
+//' @param momentum [\code{numeric(1)}]\cr 
+//'   Momentum term, fraction of how much of the previous gradient we add.
+//' @param iters [\code{integer(1)}]\cr 
+//'   Number of iterations.
+//' @param trace [\code{logical(1)}]\cr 
+//'   Flag to specify whether to print the progress or not.
+//' @param warnings [\code{logical(1)}]\cr 
+//'   Flag to specify whether to print warnings or not.
+//' @return [\code{list}] List containing the parameter, the last update, the 
+//'   cumulated updates, and the actual MSE of the parameter.
+Rcpp::List momentum (ModelWrapper& mod, arma::colvec& param_start, double learning_rate = 0.01, 
+  double momentum = 0.9, unsigned int iters = 1, bool trace = false, bool warnings = false)
+{
+  return optimizer::momentum(mod.my_model, param_start, learning_rate, momentum, iters, trace, warnings);
+}
 
 RCPP_MODULE (models)
 {
@@ -50,7 +90,8 @@ RCPP_MODULE (models)
     .method("predictNewdata", &LinearModelWrapper::predictNewdata, "Predict using newdata")
     .method("predict", &LinearModelWrapper::predict, "Predict using the training data")
   ;
-  function("gradientDescent", &gradientDescentWrapper);
+  function("gradientDescent", &gradientDescent);
+  function("momentum", &momentum);
 }
 
 #endif // MODEL_MODULE_CPP_

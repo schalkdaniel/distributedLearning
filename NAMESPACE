@@ -3,4 +3,4 @@
 import(Rcpp)
 import(RcppArmadillo)
 import(methods)
-useDynLib(distMod, .registration = TRUE)
+useDynLib(distributedLearning, .registration = TRUE)

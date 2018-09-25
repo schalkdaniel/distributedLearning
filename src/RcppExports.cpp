@@ -8,7 +8,7 @@ using namespace Rcpp;
 
 // doSomethingWithTest
 double doSomethingWithTest(SEXP test);
-RcppExport SEXP _distMod_doSomethingWithTest(SEXP testSEXP) {
+RcppExport SEXP _distributedLearning_doSomethingWithTest(SEXP testSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -19,7 +19,7 @@ END_RCPP
 }
 // getTest
 SEXP getTest(double a, double b);
-RcppExport SEXP _distMod_getTest(SEXP aSEXP, SEXP bSEXP) {
+RcppExport SEXP _distributedLearning_getTest(SEXP aSEXP, SEXP bSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -33,13 +33,13 @@ END_RCPP
 RcppExport SEXP _rcpp_module_boot_models();
 
 static const R_CallMethodDef CallEntries[] = {
-    {"_distMod_doSomethingWithTest", (DL_FUNC) &_distMod_doSomethingWithTest, 1},
-    {"_distMod_getTest", (DL_FUNC) &_distMod_getTest, 2},
+    {"_distributedLearning_doSomethingWithTest", (DL_FUNC) &_distributedLearning_doSomethingWithTest, 1},
+    {"_distributedLearning_getTest", (DL_FUNC) &_distributedLearning_getTest, 2},
     {"_rcpp_module_boot_models", (DL_FUNC) &_rcpp_module_boot_models, 0},
     {NULL, NULL, 0}
 };
 
-RcppExport void R_init_distMod(DllInfo *dll) {
+RcppExport void R_init_distributedLearning(DllInfo *dll) {
     R_registerRoutines(dll, NULL, CallEntries, NULL, NULL);
     R_useDynamicSymbols(dll, FALSE);
 }
