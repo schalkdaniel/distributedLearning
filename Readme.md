@@ -8,26 +8,26 @@ fashion. This is done by averaging gradient descent updates.
 ``` r
 set.seed(314159)
 
-df.train = iris[sample(nrow(iris)), ]
-idx.test = sample(x = seq_len(nrow(df.train)), size = 0.1 * nrow(df.train))
+df_train = iris[sample(nrow(iris)), ]
+idx_test = sample(x = seq_len(nrow(df_train)), size = 0.1 * nrow(df_train))
 
-df.test  = df.train[idx.test, ]
-df.train = df.train[-idx.test, ]
+df_test  = df_train[idx_test, ]
+df_train = df_train[-idx_test, ]
 
 splits = 3L
-breaks = seq(1, nrow(df.train), length.out = splits + 1)
+breaks = seq(1, nrow(df_train), length.out = splits + 1)
 
 # Save single train sets:
 files = character(splits)
 for (i in seq_len(splits)) {
     files[i] = paste0("data/iris", i, ".csv")
 
-    temp = df.train[breaks[i]:breaks[i + 1], ]
+    temp = df_train[breaks[i]:breaks[i + 1], ]
     write.csv(x = temp, file = files[i], row.names = FALSE)
 }
 
 # Save test set:
-write.csv(x = df.test, file = "data/iris_test.csv")
+write.csv(x = df_test, file = "data/iris_test.csv")
 ```
 
 The `files` object contains the different paths to the datasets which
@@ -53,16 +53,16 @@ fit:
 
 ``` r
 # "Load" iris dataset and create data matrix. In the final algorithm, this is done by a formula:
-X = cbind(Intercept = 1, Petal.Length = df.train[["Petal.Length"]], Sepal.Width = df.train[["Sepal.Width"]])
+X = cbind(Intercept = 1, Petal.Length = df_train[["Petal.Length"]], Sepal.Width = df_train[["Sepal.Width"]])
 
 # Define target variable:
-y = df.train[["Sepal.Length"]]
+y = df_train[["Sepal.Length"]]
 
 # Now we define a linear model as model for fitting:
-lin.mod = LinearModel$new(X, y)
+lin_mod = LinearModel$new(X, y)
 
 # With that model we can, i.e., calculate the MSE for a given parameter vector:
-lin.mod$calculateMSE(rnorm(3))
+lin_mod$calculateMSE(rnorm(3))
 ## [1] 44.42
 ```
 
@@ -72,11 +72,11 @@ algorithm we fit a linear model on the whole dataset:
 ``` r
 myformula = formula(Sepal.Length ~ Petal.Length + Sepal.Width)
 
-mod.lm = lm(myformula, data = df.train)
-summary(mod.lm)
+mod_lm = lm(myformula, data = df_train)
+summary(mod_lm)
 ## 
 ## Call:
-## lm(formula = myformula, data = df.train)
+## lm(formula = myformula, data = df_train)
 ## 
 ## Residuals:
 ##    Min     1Q Median     3Q    Max 
@@ -97,17 +97,17 @@ Finally, we run the `gradientDescent()` optimizer for 3000 epochs with a
 learning rate of 0.01 by starting at \(\vec{0}\):
 
 ``` r
-param.start = rep(0, ncol(X))
-grad.desc.lm = gradientDescent(lin.mod, param.start, 0.01, 3000, FALSE, FALSE)
-str(grad.desc.lm)
+param_start = rep(0, ncol(X))
+grad_desc_lm = gradientDescent(lin_mod, param_start, 0.01, 3000, FALSE, FALSE)
+str(grad_desc_lm)
 ## List of 4
 ##  $ param_new : num [1:3, 1] 1.296 0.511 0.852
 ##  $ udpate    : num [1:3, 1] 0.00022624 -0.00000954 -0.00006167
 ##  $ update_cum: num [1:3, 1] 1.296 0.511 0.852
 ##  $ mse       : num 0.115
 
-knitr::kable(data.frame(lm = coef(mod.lm), grad.descent = grad.desc.lm$param_new, 
-  diff = coef(mod.lm) - grad.desc.lm$param_new))
+knitr::kable(data.frame(lm = coef(mod_lm), grad.descent = grad_desc_lm$param_new, 
+  diff = coef(mod_lm) - grad_desc_lm$param_new))
 ```
 
 |              |     lm | grad.descent |     diff |
@@ -121,17 +121,17 @@ parameter and continue training for lets say 2000 iterations with a
 smaller learning rate:
 
 ``` r
-param.start.next = grad.desc.lm$param_new
-grad.desc.lm.next = gradientDescent(lin.mod, param.start.next, 0.001, 2000, FALSE, FALSE)
-str(grad.desc.lm)
+param_start_next = grad_desc_lm$param_new
+grad_desc_lm_next = gradientDescent(lin_mod, param_start_next, 0.001, 2000, FALSE, FALSE)
+str(grad_desc_lm)
 ## List of 4
 ##  $ param_new : num [1:3, 1] 1.296 0.511 0.852
 ##  $ udpate    : num [1:3, 1] 0.00022624 -0.00000954 -0.00006167
 ##  $ update_cum: num [1:3, 1] 1.296 0.511 0.852
 ##  $ mse       : num 0.115
 
-knitr::kable(data.frame(lm = coef(mod.lm), grad.descent = grad.desc.lm.next$param_new, 
-  diff = coef(mod.lm) - grad.desc.lm.next$param_new))
+knitr::kable(data.frame(lm = coef(mod_lm), grad.descent = grad_desc_lm_next$param_new, 
+  diff = coef(mod_lm) - grad_desc_lm_next$param_new))
 ```
 
 |              |     lm | grad.descent |     diff |
@@ -176,9 +176,12 @@ epochs and learning rate:
 ``` r
 myformula = formula(Sepal.Length ~ Petal.Length + Sepal.Width)
 
-initializeDistributedModel(formula = myformula, model = "LinearModel", optimizer = "gradientDescent", 
+registry_dir = initializeDistributedModel(formula = myformula, model = "LinearModel", optimizer = "gradientDescent", 
   out_dir = getwd(), files = files, epochs = 30000L, learning_rate = 0.01, mse_eps = 1e-10, 
   file_reader = read.csv, overwrite = TRUE)
+## Warning in initializeDistributedModel(formula = myformula, model =
+## "LinearModel", : Nothing to overwrite, /home/daniel/github_repos/
+## distributedLearning/train_files does not exist.
 ```
 
 We can have a look at the created registry and the model object:
@@ -212,7 +215,7 @@ registry
 ##     fill = TRUE, comment.char = "", ...) 
 ## read.table(file = file, header = header, sep = sep, quote = quote, 
 ##     dec = dec, fill = fill, comment.char = comment.char, ...)
-## <bytecode: 0x562f55a18588>
+## <bytecode: 0x55b89c79de28>
 ## <environment: namespace:utils>
 ## 
 ## $learning_rate
@@ -242,15 +245,15 @@ otherwise it is deleted when it is not used anymore.
 Finally, we can do an update by calling `trainDistributedModel()`:
 
 ``` r
-trainDistributedModel(regis = "train_files")
+trainDistributedModel(regis = registry_dir)
 ## 
 ## Entering iteration 0
 ##  Processing data/iris1.csv
 ##  Processing data/iris2.csv
 ##  Processing data/iris3.csv
-trainDistributedModel(regis = "train_files")
+trainDistributedModel(regis = registry_dir)
 ##   >> Calculate new beta which gives an mse of 3.19279892679591
-##   >> Removing train_files/iter0.rds
+##   >> Removing /home/daniel/github_repos/distributedLearning/train_files/iter0.rds
 
 load("train_files/registry.rds")
 registry
@@ -280,7 +283,7 @@ registry
 ##     fill = TRUE, comment.char = "", ...) 
 ## read.table(file = file, header = header, sep = sep, quote = quote, 
 ##     dec = dec, fill = fill, comment.char = comment.char, ...)
-## <bytecode: 0x562f573b3028>
+## <bytecode: 0x55b8abe5ce98>
 ## <environment: namespace:utils>
 ## 
 ## $learning_rate
@@ -301,6 +304,69 @@ model
 ## [1] 0.1454 0.8834 0.2628
 ```
 
+To reduce the costs of communication it is also possible to specify how
+much iterations should be done within once server:
+
+``` r
+trainDistributedModel(regis = registry_dir, epochs_at_once = 10L)
+## 
+## Entering iteration 1
+##  Processing data/iris1.csv
+##  Processing data/iris2.csv
+##  Processing data/iris3.csv
+trainDistributedModel(regis = registry_dir, epochs_at_once = 10L)
+##   >> Calculate new beta which gives an mse of 0.818328612962234
+##   >> Removing /home/daniel/github_repos/distributedLearning/train_files/iter1.rds
+
+load("train_files/registry.rds")
+registry
+## $file_names
+## [1] "data/iris1.csv" "data/iris2.csv" "data/iris3.csv"
+## 
+## $model
+## [1] "LinearModel"
+## 
+## $optimizer
+## [1] "gradientDescent"
+## 
+## $epochs
+## [1] 30000
+## 
+## $mse_eps
+## [1] 1e-10
+## 
+## $actual_iteration
+## [1] 11
+## 
+## $formula
+## Sepal.Length ~ Petal.Length + Sepal.Width
+## 
+## $file_reader
+## function (file, header = TRUE, sep = ",", quote = "\"", dec = ".", 
+##     fill = TRUE, comment.char = "", ...) 
+## read.table(file = file, header = header, sep = sep, quote = quote, 
+##     dec = dec, fill = fill, comment.char = comment.char, ...)
+## <bytecode: 0x55b89d235170>
+## <environment: namespace:utils>
+## 
+## $learning_rate
+## [1] 0.01
+## 
+## $save_all
+## [1] FALSE
+
+load("train_files/model.rds")
+model
+## $mse_average
+## [1] 0.8183
+## 
+## $done
+## [1] FALSE
+## 
+## $beta
+## [1] 0.2457 0.9390 0.6055
+```
+
 In addition, the training of the model can also be done until the
 stopping criteria is hit. This is ether the maximal number of epochs or
 the relative improvement of the MSE (specified as `mse_eps` 10^{-10}).
@@ -309,7 +375,7 @@ if it is done and `FALSE` if not:
 
 ``` r
 while(! model[["done"]]) {
-    trainDistributedModel(regis = "train_files", silent = TRUE)
+    trainDistributedModel(regis = registry_dir, silent = TRUE)
     load("train_files/model.rds")
 }
 ```
@@ -333,7 +399,7 @@ model
 ## $beta
 ## [1] 2.3124 0.4683 0.5752
 
-knitr::kable(data.frame(lm = coef(mod.lm), actual.step = model[["beta"]], diff = coef(mod.lm) - model[["beta"]]))
+knitr::kable(data.frame(lm = coef(mod_lm), actual.step = model[["beta"]], diff = coef(mod_lm) - model[["beta"]]))
 ```
 
 |              |     lm | actual.step |     diff |
@@ -341,3 +407,92 @@ knitr::kable(data.frame(lm = coef(mod.lm), actual.step = model[["beta"]], diff =
 | (Intercept)  | 2.3029 |      2.3124 | \-0.0095 |
 | Petal.Length | 0.4688 |      0.4683 |   0.0006 |
 | Sepal.Width  | 0.5773 |      0.5752 |   0.0021 |
+
+``` r
+unlink(registry_dir, recursive = TRUE)
+```
+
+## Comparison of Different Epochs
+
+``` r
+registry_dir = initializeDistributedModel(formula = myformula, model = "LinearModel", optimizer = "gradientDescent", 
+  out_dir = getwd(), files = files, epochs = 30000L, learning_rate = 0.01, mse_eps = 1e-10, 
+  file_reader = read.csv, overwrite = TRUE)
+## Warning in initializeDistributedModel(formula = myformula, model =
+## "LinearModel", : Nothing to overwrite, /home/daniel/github_repos/
+## distributedLearning/train_files does not exist.
+
+load("train_files/model.rds")
+
+time = proc.time()
+while(! model[["done"]]) {
+  trainDistributedModel(regis = registry_dir, silent = TRUE)
+  load("train_files/model.rds")
+}
+time_epochs_1 = proc.time() - time
+beta_epochs_1 = model[["beta"]]
+
+unlink(registry_dir, recursive = TRUE)
+```
+
+``` r
+registry_dir = initializeDistributedModel(formula = myformula, model = "LinearModel", optimizer = "gradientDescent", 
+  out_dir = getwd(), files = files, epochs = 30000L, learning_rate = 0.01, mse_eps = 1e-10, 
+  file_reader = read.csv, overwrite = TRUE)
+## Warning in initializeDistributedModel(formula = myformula, model =
+## "LinearModel", : Nothing to overwrite, /home/daniel/github_repos/
+## distributedLearning/train_files does not exist.
+
+load("train_files/model.rds")
+
+time = proc.time()
+while(! model[["done"]]) {
+  trainDistributedModel(regis = registry_dir, silent = TRUE, epochs_at_once = 5L)
+  load("train_files/model.rds")
+}
+time_epochs_5 = proc.time() - time
+beta_epochs_5 = model[["beta"]]
+
+unlink(registry_dir, recursive = TRUE)
+```
+
+``` r
+registry_dir = initializeDistributedModel(formula = myformula, model = "LinearModel", optimizer = "gradientDescent", 
+  out_dir = getwd(), files = files, epochs = 30000L, learning_rate = 0.01, mse_eps = 1e-10, 
+  file_reader = read.csv, overwrite = TRUE)
+## Warning in initializeDistributedModel(formula = myformula, model =
+## "LinearModel", : Nothing to overwrite, /home/daniel/github_repos/
+## distributedLearning/train_files does not exist.
+
+load("train_files/model.rds")
+
+time = proc.time()
+while(! model[["done"]]) {
+  trainDistributedModel(regis = registry_dir, silent = TRUE, epochs_at_once = 10L)
+  load("train_files/model.rds")
+}
+time_epochs_10 = proc.time() - time
+beta_epochs_10 = model[["beta"]]
+
+unlink(registry_dir, recursive = TRUE)
+```
+
+### Estimated Parameter
+
+``` r
+knitr::kable(data.frame(lm = coef(mod_lm), beta_epochs_1, beta_epochs_5, beta_epochs_10))
+```
+
+|              |     lm | beta\_epochs\_1 | beta\_epochs\_5 | beta\_epochs\_10 |
+| ------------ | -----: | --------------: | --------------: | ---------------: |
+| (Intercept)  | 2.3029 |          2.3124 |          2.3167 |           2.3110 |
+| Petal.Length | 0.4688 |          0.4683 |          0.4679 |           0.4681 |
+| Sepal.Width  | 0.5773 |          0.5752 |          0.5742 |           0.5759 |
+
+### Fitting Time
+
+| Iterations Per Epoch | Elapsed Time |
+| -------------------- | ------------ |
+| 1                    | 239.138      |
+| 5                    | 47.931       |
+| 10                   | 18.831       |

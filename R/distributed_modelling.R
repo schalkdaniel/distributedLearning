@@ -30,8 +30,7 @@
 #'   Function to read the datasets specified in files.
 #' @param overwrite [\code{logical(1)}]\cr
 #'   Flag to specify whether to overwrite an existing registry and model or not.
-#' @return List of parameter vector, the final mse, and a flag if the algorithm was stopped
-#'   by the "epsilon criteria" or after the maximal iterations.
+#' @return Character of the file directory for local files.
 initializeDistributedModel = function (formula, model = "LinearModel", optimizer = "gradientDescent", out_dir = getwd(), 
 	files, epochs, learning_rate, mse_eps, save_all = FALSE, file_reader, overwrite = FALSE)
 {
@@ -64,6 +63,7 @@ initializeDistributedModel = function (formula, model = "LinearModel", optimizer
 		model = list(mse_average = 0, done = FALSE)
 		save(list = "model", file = model_dir)
 	}
+	return (file_dir)
 }
 
 trainDistributedModel = function (regis_dir, silent = FALSE, epochs_at_once = 1L, ...)
@@ -106,7 +106,7 @@ trainDistributedModel = function (regis_dir, silent = FALSE, epochs_at_once = 1L
 				stop_algo = FALSE
 			}
 
-			registry[["actual_iteration"]] = actual_iteration + 1
+			registry[["actual_iteration"]] = actual_iteration + epochs_at_once
 
 			if (! registry[["save_all"]]) {
 				if (! silent) message("  >> Removing ", actual_state, "\n")
@@ -138,7 +138,7 @@ trainDistributedModel = function (regis_dir, silent = FALSE, epochs_at_once = 1L
 				model_temp = new(eval(parse(text = registry[["model"]])), X = X_helper, y = data_in[[response]])
 				optimizer.fun = eval(parse(text = registry[["optimizer"]]))
 				snapshot[[file]] = optimizer.fun(mod = model_temp, param_start = model[["beta"]], learning_rate = registry[["learning_rate"]], 
-  				iters = 1L, trace = FALSE, warnings = FALSE)
+  				iters = epochs_at_once, trace = FALSE, warnings = FALSE)
 			}
 			save(list = "snapshot", file = actual_state)
 		}
