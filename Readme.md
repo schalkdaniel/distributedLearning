@@ -147,15 +147,17 @@ or more gradient descent steps. The idea is to save the current state of
 the actual model on the disk and reload that setting every time a new
 update is available:
 
-1.  On server/location *i* do:
-    1.  Read *i*-th dataset
+1.  On server/location `i` do:
+    1.  Read `i`-th dataset
     2.  Load settings or initialize them if not available:
         1.  Define the model and the target variable and formula
         2.  Load latest gradient descent update
     3.  Conduct as many gradient descent steps as defined in advance
-2.  Go ahead to server/location *i+1* or make a final average of updates
-    if \(i\) was the last one and therefore run again on server/location
-    *1*.
+2.  Go ahead to server/location `i+1` or make a final average of updates
+    if `i` was the last one and therefore run again on server/location
+    `1`.
+
+Basically, this algorithm does `FederatedAveraging` as described in 1.
 
 ### Initialize model
 
@@ -496,3 +498,8 @@ knitr::kable(data.frame(lm = coef(mod_lm), beta_epochs_1, beta_epochs_5, beta_ep
 | 1                    | 239.138      |
 | 5                    | 47.931       |
 | 10                   | 18.831       |
+
+## References 
+
+1. McMahan, H. B., Moore, E., Ramage, D., & Hampson, S. (2016). Communication-efficient learning of deep networks from decentralized data. arXiv preprint arXiv:1602.05629.
+
