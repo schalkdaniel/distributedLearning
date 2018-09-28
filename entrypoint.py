@@ -4,6 +4,7 @@ import subprocess
 import requests
 import os
 import shutil
+from typing import IO
 
 SLASH = '/'
 NUMBER_OF_STATIONS = 3
@@ -16,15 +17,25 @@ def without_trailing_slash(s: str):
     return s[:-1] if s.endswith(SLASH) else s
 
 
+def extend(ls, *producer):
+    for proc in producer:
+        ls.extend(proc.readlines())
+
+
 def process_script_with_r(script: str):
     """
     Opens the provided script with Rscript and returns the stdout of the process upon completion
     :param script:
     :return:
     """
-    with subprocess.Popen(['Rscript', script]) as p:
-        p.communicate()
-        return p.stderr
+    out = []
+    with subprocess.Popen(['Rscript', script], stdout=subprocess.PIPE, stderr=subprocess.PIPE) as p:
+        with p.stdout as stdout:
+            with p.stderr as stderr:
+                while p.poll() is None:
+                    extend(out, stdout, stderr)
+                extend(out, stdout, stderr)
+    return '\n'.join([x.decode('utf-8') for x in out])
 
 
 ################################################################################################
