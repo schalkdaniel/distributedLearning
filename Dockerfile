@@ -5,7 +5,6 @@ LABEL maintainer="luk.zim91@gmail.com"
 ENV CODE_DIR /opt/train/code
 ENV DATA_DIR /opt/train/data
 ENV MODEL_DIR /opt/train/model
-ENV REGISTRY_FILE /opt/train/registry.RData
 
 # Copy the code for the distributed learning
 COPY distributed_learning "${CODE_DIR}"
