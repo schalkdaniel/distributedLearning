@@ -73,11 +73,11 @@ mod_lm = lm(myformula, data = df_train)
 summary(mod_lm)
 ```
 
-Finally, we run the `gradientDescent()` optimizer for 3000 epochs with a learning rate of 0.01 by starting at $\vec{0}$:
+Finally, we run the `optGradientDescent()` optimizer for 3000 epochs with a learning rate of 0.01 by starting at $\vec{0}$:
 
 ```{r}
 param_start = rep(0, ncol(X))
-grad_desc_lm = gradientDescent(lin_mod, param_start, 0.01, 3000, FALSE, FALSE)
+grad_desc_lm = optGradientDescent(lin_mod, param_start, 0.01, 3000, FALSE, FALSE)
 str(grad_desc_lm)
 
 knitr::kable(data.frame(lm = coef(mod_lm), grad.descent = grad_desc_lm$param_new, 
@@ -88,7 +88,7 @@ The nice thing about the implementation is that we can pass the last parameter a
 
 ```{r}
 param_start_next = grad_desc_lm$param_new
-grad_desc_lm_next = gradientDescent(lin_mod, param_start_next, 0.001, 2000, FALSE, FALSE)
+grad_desc_lm_next = optGradientDescent(lin_mod, param_start_next, 0.001, 2000, FALSE, FALSE)
 str(grad_desc_lm)
 
 knitr::kable(data.frame(lm = coef(mod_lm), grad.descent = grad_desc_lm_next$param_new, 
@@ -122,7 +122,7 @@ Now we initialize the model by setting the formula which is applied on each of t
 ```{r}
 myformula = formula(Sepal.Length ~ Petal.Length + Sepal.Width)
 
-registry_dir = initializeDistributedModel(formula = myformula, model = "LinearModel", optimizer = "gradientDescent", 
+registry_dir = initializeDistributedModel(formula = myformula, model = "LinearModel", optimizer = "optGradientDescent", 
   out_dir = getwd(), files = files, epochs = 30000L, learning_rate = 0.01, mse_eps = 1e-10, 
   file_reader = read.csv, overwrite = TRUE)
 ```
@@ -194,7 +194,7 @@ unlink(registry_dir, recursive = TRUE)
 ## Comparison of Different Epochs
 
 ```{r}
-registry_dir = initializeDistributedModel(formula = myformula, model = "LinearModel", optimizer = "gradientDescent", 
+registry_dir = initializeDistributedModel(formula = myformula, model = "LinearModel", optimizer = "optGradientDescent", 
   out_dir = getwd(), files = files, epochs = 30000L, learning_rate = 0.01, mse_eps = 1e-10, 
   file_reader = read.csv, overwrite = TRUE)
 
@@ -212,7 +212,7 @@ unlink(registry_dir, recursive = TRUE)
 ```
 
 ```{r}
-registry_dir = initializeDistributedModel(formula = myformula, model = "LinearModel", optimizer = "gradientDescent", 
+registry_dir = initializeDistributedModel(formula = myformula, model = "LinearModel", optimizer = "optGradientDescent", 
   out_dir = getwd(), files = files, epochs = 30000L, learning_rate = 0.01, mse_eps = 1e-10, 
   file_reader = read.csv, overwrite = TRUE)
 
@@ -230,7 +230,7 @@ unlink(registry_dir, recursive = TRUE)
 ```
 
 ```{r}
-registry_dir = initializeDistributedModel(formula = myformula, model = "LinearModel", optimizer = "gradientDescent", 
+registry_dir = initializeDistributedModel(formula = myformula, model = "LinearModel", optimizer = "optGradientDescent", 
   out_dir = getwd(), files = files, epochs = 30000L, learning_rate = 0.01, mse_eps = 1e-10, 
   file_reader = read.csv, overwrite = TRUE)
 
