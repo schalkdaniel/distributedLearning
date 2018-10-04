@@ -80,7 +80,7 @@ double LogisticRegression::calculateMSE (arma::colvec& param) const
 };
 arma::colvec LogisticRegression::responseFun (arma::colvec& score) const 
 {
-  return 1 / (1 + arma::exp(-score))
+  return 1 / (1 + arma::exp(-score));
 }
 arma::colvec LogisticRegression::predict (arma::mat& newdata) const
 {
@@ -92,3 +92,4 @@ arma::colvec LogisticRegression::predict () const
 }
 
 } // namespace model
+
