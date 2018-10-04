@@ -5,11 +5,11 @@ namespace model
 
 arma::colvec Model::getParameter () const 
 {
-  return parameter;
+  return this->parameter;
 }
-arma::colvec Model::setParameter (arma::colvec& param)
+void Model::setParameter (arma::colvec& param)
 {
-  parameter = param;
+  this->parameter = param;
 }
 
 Model::~Model ()
