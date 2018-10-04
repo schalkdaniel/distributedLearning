@@ -30,29 +30,40 @@ def process_script_with_r(script: str):
     """
     out = []
     with subprocess.Popen(['Rscript', script], stdout=subprocess.PIPE, stderr=subprocess.PIPE) as p:
-        with p.stdout as stdout:
-            with p.stderr as stderr:
-                while p.poll() is None:
-                    extend(out, stdout, stderr)
+        with p.stdout as stdout, p.stderr as stderr:
+            while p.poll() is None:
                 extend(out, stdout, stderr)
+            extend(out, stdout, stderr)
     return '\n'.join([x.decode('utf-8') for x in out])
 
 
 ################################################################################################
-# The environment the train lives isn
+# The environment the train lives in
 ################################################################################################
+def from_env_without_trailing_slash(key_name: str):
+    return without_trailing_slash(os.environ[key_name])
+
+
 def file_endpoint():
-    return without_trailing_slash(os.environ['PHT_FILE_DOWNLOAD_SERVICE'])
+    return from_env_without_trailing_slash('PHT_FILE_DOWNLOAD_SERVICE')
 
 
 # Where the Iris files are gonna be stored
 def data_dir():
-    return os.environ['DATA_DIR']
+    return from_env_without_trailing_slash('DATA_DIR')
 
 
 # Where the R code for the training lives
 def code_dir():
-    return os.environ['CODE_DIR']
+    return from_env_without_trailing_slash('CODE_DIR')
+
+
+def model_dir():
+    return from_env_without_trailing_slash('MODEL_DIR')
+
+
+def finish_file():
+    return os.path.join(model_dir(), 'FINISH')
 
 
 ################################################################################################
@@ -82,17 +93,36 @@ def fetch_data(station_id) -> bool:
     return True
 
 
+def process_code(scriptname: str):
+    """
+    Process some script in the code directory
+    """
+    return process_script_with_r(os.path.join(code_dir(), scriptname))
+
+
 def training():
-    return process_script_with_r(os.path.join(code_dir(), 'training.R'))
+    return process_code('training.R')
+
+
+def print_summary():
+    return process_code('print_summary.R')
+
+
+def get_next_train_tag(station_id: int):
+    """
+    Input: The _current_ station_id
+    """
+    if os.path.isfile(finish_file()):
+        return 'finish'
+    return 'station.{}'.format((station_id + 1) % NUMBER_OF_STATIONS) 
 
 
 class DistributedLearningTrain(Train):
 
-    @staticmethod
-    def run_algorithm(run_info: RunInfo) -> RunAlgorithmResponse:
+    def run_algorithm(self, run_info: RunInfo) -> RunAlgorithmResponse:
 
         # Calculate the new train tag (This train only modulates the number of station)
-        next_train_tag = 'station.{}'.format((run_info.station_id + 1) % NUMBER_OF_STATIONS)
+        next_train_tag = get_next_train_tag(run_info.station_id)
 
         # First, ensure that there is no data left
         clear_data()
@@ -114,7 +144,7 @@ class DistributedLearningTrain(Train):
             clear_data()
 
     def print_summary(self, run_info: RunInfo) -> str:
-        return '\n'.join(os.listdir(data_dir()))
+        return print_summary()
 
     def check_requirements(self, run_info: RunInfo) -> CheckRequirementsResponse:
         pass
