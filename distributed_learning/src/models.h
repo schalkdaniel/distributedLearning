@@ -48,6 +48,41 @@ private:
 	arma::mat Xty;
 };
 
+// Logistic Regression class:
+class LogisticRegression : public Model
+{
+public:
+	LogisticRegression (arma::mat, arma::colvec);
+	~LogisticRegression ();
+
+	arma::colvec calculateGradient (arma::colvec&) const;
+	double calculateMSE (arma::colvec&) const;
+	
+	arma::colvec responseFun (arma::colvec&) const;
+	
+	arma::colvec predict (arma::mat&) const;
+	arma::colvec predict () const;
+
+
+private:
+	arma::mat X;
+	arma::colvec y;
+
+};
+
+// // Poisson Regression class:
+// class PoissonRegression : public Model
+// {
+// public:
+// 	PoissonRegression ();
+// 	~PoissonRegression ();
+
+// 	arma::colvec calculateGradient (arma::colvec&) const;
+// 	double calculateMSE (arma::colvec&) const;
+// 	arma::colvec predict (arma::mat&) const;
+// 	arma::colvec predict () const;
+// };
+
 } // namespace model
 
 #endif // MODEL_H_

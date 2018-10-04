@@ -4,15 +4,17 @@
 #                                                                                            #
 # ========================================================================================== #
 
-#' Initialize a Distributed Linear Model
+#' Initialize a Distributed Model
 #' 
 #' This function creates the files and file system required to train a linear model in a 
 #' distributed fashion.
 #' 
 #' @param formula [\code{formula}]\cr
 #'   Formula analog to the formula call in \code{lm}.
-#' @param model
-#' @param optimizer
+#' @param model [\code{character(1)}]\cr
+#'   Character indicating the model we want to use.
+#' @param optimizer [\code{character(1)}]\cr
+#'   Character indicating which optimizer we want to use. 
 #' @param out_dir [\code{character(1)}]\cr
 #'   Direction for the output files.
 #' @param files [\code{character}]\cr
@@ -66,7 +68,16 @@ initializeDistributedModel = function (formula, model = "LinearModel", optimizer
 	return (file_dir)
 }
 
-trainDistributedModel = function (regis_dir, silent = FALSE, epochs_at_once = 1L, ...)
+#' Train Distributed Model
+#' 
+#' This function conducts a specific number of epochs on the local machine. Therefore, the function reads in the available
+#' datasets and runs a fixed number of Gradient Descent steps. 
+#' 
+#' @param regis_dir [\code{character(1)}]\cr
+#'   Direction for the output files.
+#' @param silent [\code{logical(1)}]\cr
+#' @param epochs_at_once [\code{integer(1)}]\cr
+trainDistributedModel = function (regis_dir, silent = FALSE, epochs_at_once = 1L)
 {
 	load(file = paste0(regis_dir, "/registry.rds"))
 	load(file = paste0(regis_dir, "/model.rds"))

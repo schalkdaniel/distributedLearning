@@ -10,15 +10,14 @@ namespace optimizer
  * \param model `model::Model*` Pointer of the model we want to fit.
  * \param param_start `arma::colvec` The initial parameter.
  * \param learning_rate `double` Step size of the gradient updates.
- * \param momentum `double` Momentum term, fraction of how much of the previous gradient we add.
  * \param iters `unsigned int` Number of iterations.
  * \param trace `bool` Flag to specify whether to print the progress or not.
  * \param warnings `bool` Flag to specify whether to print warnings or not.
  * \return `Rcpp::List` List containing the parameter, the last update, the 
  *   cumulated updates, and the actual MSE of the parameter. 
  */
-Rcpp::List momentum (model::Model* model, arma::colvec& param_start, double learning_rate = 0.01, 
-  double momentum = 0.9, unsigned int iters = 1, bool trace = false, bool warnings = false)
+Rcpp::List optGradientDescent (model::Model* model, arma::colvec& param_start, double learning_rate = 0.01, 
+  unsigned int iters = 1, bool trace = false, bool warnings = false)
 {
   // Get Model object from SEXP:
   // Rcpp::XPtr<model::Model> temp_model (model);
@@ -39,7 +38,7 @@ Rcpp::List momentum (model::Model* model, arma::colvec& param_start, double lear
 
     // We are dividing by n to minimize the MSE not SSE (this basically shrinks
     // the learning rate by 1/n):
-    update      = momentum * param_new + learning_rate * model->calculateGradient(param_new);
+    update      = learning_rate * model->calculateGradient(param_new);
     update_cum += update;
     param_new  += update;
 

@@ -2,3 +2,5 @@ Readme.html
 train_files
 src/*.o
 src/*.so
+.Rhistory
+
