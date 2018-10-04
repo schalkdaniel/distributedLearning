@@ -18,7 +18,7 @@ public:
 	virtual arma::colvec predict () const = 0;
 
 	arma::colvec getParameter () const;
-	arma::colvec setParameter (arma::colvec&);
+	void setParameter (arma::colvec&);
 
   virtual ~Model ();
 
