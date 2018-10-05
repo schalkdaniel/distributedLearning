@@ -24,7 +24,7 @@ RUN apt-get update -y && \
         libxml2-dev \
         python3-requests \
         python3-setuptools && \
-    Rscript -e 'install.packages(c("devtools", "roxygen2", "RcppArmadillo")); devtools::load_all()' && \
+    Rscript -e 'install.packages(c("devtools", "roxygen2", "RcppArmadillo")); devtools::load_all(recompile=TRUE)' && \
     mkdir -p "${MODEL_DIR}" && \
     mkdir -p "${DATA_DIR}" && \
     Rscript /tmp/init.R && \
