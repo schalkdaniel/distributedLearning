@@ -3,4 +3,7 @@ train_files
 src/*.o
 src/*.so
 .Rhistory
+.idea/
+CMakeLists.txt
+cmake-build-debug/
 
