@@ -8,6 +8,7 @@ from typing import IO
 
 SLASH = '/'
 NUMBER_OF_STATIONS = 3
+PHT_FILE_DOWNLOAD_SERVICE = 'PHT_FILE_DOWNLOAD_SERVICE'
 
 
 ################################################################################################
@@ -44,8 +45,12 @@ def from_env_without_trailing_slash(key_name: str):
     return without_trailing_slash(os.environ[key_name])
 
 
+def file_endpoint_exists():
+    return PHT_FILE_DOWNLOAD_SERVICE in os.environ
+
+
 def file_endpoint():
-    return from_env_without_trailing_slash('PHT_FILE_DOWNLOAD_SERVICE')
+    return from_env_without_trailing_slash(PHT_FILE_DOWNLOAD_SERVICE)
 
 
 # Where the Iris files are gonna be stored
@@ -147,10 +152,11 @@ class DistributedLearningTrain(Train):
         return print_summary()
 
     def check_requirements(self, run_info: RunInfo) -> CheckRequirementsResponse:
-        pass
+        unmet = [] if file_endpoint_exists() else [PHT_FILE_DOWNLOAD_SERVICE]
+        return CheckRequirementsResponse(unmet=unmet)
 
     def list_requirements(self, run_info: RunInfo) -> ListRequirementsResponse:
-        pass
+        return ListRequirementsResponse([PHT_FILE_DOWNLOAD_SERVICE])
 
 
 if __name__ == '__main__':
