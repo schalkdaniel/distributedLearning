@@ -1,2 +1,9 @@
 Makefile
+CMakeLists.txt
+cmake-build-debug
+.gitignore
+.git
+.idea
+.Rhistory
+.Rbuildignore
 
