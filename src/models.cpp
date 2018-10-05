@@ -84,12 +84,12 @@ arma::colvec LogisticRegression::responseFun (arma::colvec& score) const
 }
 arma::colvec LogisticRegression::predict (arma::mat& newdata) const
 {
-  return responseFun(newdata * parameter);
+  arma::colvec score(newdata * this->parameter);
+  return responseFun(score);
 }
 arma::colvec LogisticRegression::predict () const
 {
-  return responseFun(X * parameter);
+  arma::colvec score(X * this->parameter);
+  return responseFun(score);
 }
-
 } // namespace model
-
