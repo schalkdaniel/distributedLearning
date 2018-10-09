@@ -20,7 +20,7 @@ files <- c(paste(data_dir, "iris0.csv", sep="/"),
 
 initializeDistributedModel(formula = formula(Sepal.Length ~ Petal.Length + Sepal.Width),
 			   model = "LinearModel",
-			   optimizer = "gradientDescent",
+			   optimizer = "optGradientDescent",
 			   out_dir = out_dir,
 			   files = files,
 			   epochs = 30000L,
