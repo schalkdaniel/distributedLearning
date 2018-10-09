@@ -33,7 +33,7 @@
 #' @param overwrite [\code{logical(1)}]\cr
 #'   Flag to specify whether to overwrite an existing registry and model or not.
 #' @return Character of the file directory for local files.
-initializeDistributedModel = function (formula, model = "LinearModel", optimizer = "gradientDescent", out_dir = getwd(), 
+initializeDistributedModel = function (formula, model = "LinearModel", optimizer = "optGradientDescent", out_dir = getwd(),
 	files, epochs, learning_rate, mse_eps, save_all = FALSE, file_reader, overwrite = FALSE)
 {
 	registry = list(file_names = files, model = model, optimizer = optimizer, epochs = epochs, mse_eps = mse_eps, actual_iteration = 0,
