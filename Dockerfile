@@ -1,4 +1,4 @@
-FROM r-base:3.5.1
+FROM lukaszimmermann/r-base:3.5.1
 LABEL maintainer="luk.zim91@gmail.com"
 
 # The environment
@@ -17,14 +17,8 @@ WORKDIR "${CODE_DIR}"
 RUN apt-get update -y && \
     apt-get install -y --no-install-suggests --no-install-recommends  \
         git \
-    	libcurl4-openssl-dev \
-        libgit2-dev \
-        libssh2-1-dev \
-    	libssl-dev \
-        libxml2-dev \
         python3-requests \
         python3-setuptools && \
-    Rscript -e 'install.packages(c("devtools", "roxygen2", "RcppArmadillo")); devtools::load_all(recompile=TRUE)' && \
     mkdir -p "${MODEL_DIR}" && \
     mkdir -p "${DATA_DIR}" && \
     Rscript /tmp/init.R && \
