@@ -74,7 +74,7 @@ def fetch_data(station_id) -> bool:
     iris_filename = 'iris{}.csv'.format(station_id)
 
     # Fetch the file from the remote service
-    r = requests.get(file_endpoint() + SLASH + iris_filename)
+    r = requests.get(file_endpoint() + '/' + iris_filename)
 
     # If the file could not be fetched from the service, the execution was unsuccessful
     if r.status_code != 200:
