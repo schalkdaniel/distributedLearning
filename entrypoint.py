@@ -1,4 +1,4 @@
-from pht.train import Train, cmd_for_train, RunInfo
+from pht.train import Train, cmd_for_train, StationInfo
 from pht.response import \
     RunAlgorithmResponse,\
     CheckRequirementsResponse,\
@@ -119,17 +119,17 @@ def get_next_train_tag(station_id: int):
 
 class DistributedLearningTrain(Train):
 
-    def run_algorithm(self, run_info: RunInfo) -> RunAlgorithmResponse:
+    def run_algorithm(self, station_info: StationInfo) -> RunAlgorithmResponse:
 
         # Calculate the new train tag (This train only modulates the number of station)
-        next_train_tag = get_next_train_tag(run_info.station_id)
+        next_train_tag = get_next_train_tag(station_info.station_id)
 
         # First, ensure that there is no data left
         clear_data()
 
         try:
             # Now fetch the data from the local service
-            if not fetch_data(run_info.station_id):
+            if not fetch_data(station_info.station_id):
                 return RunAlgorithmResponse(False, next_train_tag, "Error fetching file from service")
 
             # Perform the update on the data model
@@ -143,16 +143,16 @@ class DistributedLearningTrain(Train):
         finally:
             clear_data()
 
-    def print_summary(self, run_info: RunInfo) -> PrintSummaryResponse:
+    def print_summary(self, station_info: StationInfo) -> PrintSummaryResponse:
         (stdout, stderr) = print_summary()
 
         return PrintSummaryResponse(to_message(stdout, stderr))
 
-    def check_requirements(self, run_info: RunInfo) -> CheckRequirementsResponse:
+    def check_requirements(self, station_info: StationInfo) -> CheckRequirementsResponse:
         unmet = [] if file_endpoint_exists() else [PHT_FILE_DOWNLOAD_SERVICE]
         return CheckRequirementsResponse(unmet=unmet)
 
-    def list_requirements(self, run_info: RunInfo) -> ListRequirementsResponse:
+    def list_requirements(self, station_info: StationInfo) -> ListRequirementsResponse:
         return ListRequirementsResponse([PHT_FILE_DOWNLOAD_SERVICE])
 
 
