@@ -1,12 +1,19 @@
 from pht.train import Train, cmd_for_train, RunInfo
-from pht.response import RunAlgorithmResponse, CheckRequirementsResponse, ListRequirementsResponse
+from pht.response import \
+    RunAlgorithmResponse,\
+    CheckRequirementsResponse,\
+    ListRequirementsResponse,\
+    PrintSummaryResponse
 import subprocess
 import requests
 import os
 import shutil
 from typing import IO
 
-SLASH = '/'
+# PHT Helper Methods
+from pht.process import process
+from pht.env import env_exists, from_env_without_trailing_slashes
+
 NUMBER_OF_STATIONS = 3
 PHT_FILE_DOWNLOAD_SERVICE = 'PHT_FILE_DOWNLOAD_SERVICE'
 
@@ -14,57 +21,38 @@ PHT_FILE_DOWNLOAD_SERVICE = 'PHT_FILE_DOWNLOAD_SERVICE'
 ################################################################################################
 # Helper
 ################################################################################################
-def without_trailing_slash(s: str):
-    return s[:-1] if s.endswith(SLASH) else s
-
-
-def extend(ls, *producer):
-    for proc in producer:
-        ls.extend(proc.readlines())
-
-
-def process_script_with_r(script: str):
+def process_script_with_r(script: str) -> Tuple[List[str], List[str]]:
     """
     Opens the provided script with Rscript and returns the stdout of the process upon completion
     :param script:
     :return:
     """
-    out = []
-    with subprocess.Popen(['Rscript', script], stdout=subprocess.PIPE, stderr=subprocess.PIPE) as p:
-        with p.stdout as stdout, p.stderr as stderr:
-            while p.poll() is None:
-                extend(out, stdout, stderr)
-            extend(out, stdout, stderr)
-    return '\n'.join([x.decode('utf-8') for x in out])
+    return process(['Rscript', script])
 
 
 ################################################################################################
 # The environment the train lives in
 ################################################################################################
-def from_env_without_trailing_slash(key_name: str):
-    return without_trailing_slash(os.environ[key_name])
-
-
 def file_endpoint_exists():
-    return PHT_FILE_DOWNLOAD_SERVICE in os.environ
+    return env_exists(PHT_FILE_DOWNLOAD_SERVICE)
 
 
 def file_endpoint():
-    return from_env_without_trailing_slash(PHT_FILE_DOWNLOAD_SERVICE)
+    return from_env_without_trailing_slashes(PHT_FILE_DOWNLOAD_SERVICE)
 
 
 # Where the Iris files are gonna be stored
 def data_dir():
-    return from_env_without_trailing_slash('DATA_DIR')
+    return from_env_without_trailing_slashes('DATA_DIR')
 
 
 # Where the R code for the training lives
 def code_dir():
-    return from_env_without_trailing_slash('CODE_DIR')
+    return from_env_without_trailing_slashes('CODE_DIR')
 
 
 def model_dir():
-    return from_env_without_trailing_slash('MODEL_DIR')
+    return from_env_without_trailing_slashes('MODEL_DIR')
 
 
 def finish_file():
@@ -105,6 +93,13 @@ def process_code(scriptname: str):
     return process_script_with_r(os.path.join(code_dir(), scriptname))
 
 
+def to_message(*args) -> str:
+    res = []
+    for arg in args:
+        res.extend(arg)
+    return '\n'.join(res)
+
+
 def training():
     return process_code('training.R')
 
@@ -138,18 +133,20 @@ class DistributedLearningTrain(Train):
                 return RunAlgorithmResponse(False, next_train_tag, "Error fetching file from service")
 
             # Perform the update on the data model
-            stdout = training()
+            (stdout, stderr) = training()
 
             # Ensure the data dir is cleaned
             clear_data()
 
-            return RunAlgorithmResponse(True, next_train_tag, message=stdout)
+            return RunAlgorithmResponse(True, to_message(stdout, stderr), next_train_tag)
 
         finally:
             clear_data()
 
-    def print_summary(self, run_info: RunInfo) -> str:
-        return print_summary()
+    def print_summary(self, run_info: RunInfo) -> PrintSummaryResponse:
+        (stdout, stderr) = print_summary()
+
+        return PrintSummaryResponse(to_message(stdout, stderr))
 
     def check_requirements(self, run_info: RunInfo) -> CheckRequirementsResponse:
         unmet = [] if file_endpoint_exists() else [PHT_FILE_DOWNLOAD_SERVICE]
