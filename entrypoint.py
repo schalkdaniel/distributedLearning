@@ -8,7 +8,7 @@ import subprocess
 import requests
 import os
 import shutil
-from typing import IO
+from typing import IO, List, Tuple
 
 # PHT Helper Methods
 from pht.process import process
