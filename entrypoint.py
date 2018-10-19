@@ -17,6 +17,9 @@ from pht.env import env_exists, from_env_without_trailing_slashes
 NUMBER_OF_STATIONS = 3
 PHT_FILE_DOWNLOAD_SERVICE = 'PHT_FILE_DOWNLOAD_SERVICE'
 
+# The base image from which the successor images should be crated from
+BASE_IMAGE = 'personalhealthtrain/train_iris:base'
+
 
 ################################################################################################
 # Helper
@@ -57,6 +60,11 @@ def model_dir():
 
 def finish_file():
     return os.path.join(model_dir(), 'FINISH')
+
+
+# List absolute paths of files that need to be exported
+def export_files():
+    return [os.path.abspath(x) for x in os.listdir(os.path.join(model_dir(), 'train_files'))]
 
 
 ################################################################################################
@@ -128,9 +136,15 @@ class DistributedLearningTrain(Train):
         clear_data()
 
         try:
+
             # Now fetch the data from the local service
             if not fetch_data(station_info.station_id):
-                return RunAlgorithmResponse(False, next_train_tag, "Error fetching file from service")
+                return RunAlgorithmResponse(
+                    success=False,
+                    message="Error fetching file from service",
+                    next_train_tag=next_train_tag,
+                    docker_base_image=BASE_IMAGE,
+                    export_files=export_files())
 
             # Perform the update on the data model
             (stdout, stderr) = training()
@@ -138,7 +152,12 @@ class DistributedLearningTrain(Train):
             # Ensure the data dir is cleaned
             clear_data()
 
-            return RunAlgorithmResponse(True, to_message(stdout, stderr), next_train_tag)
+            return RunAlgorithmResponse(
+                success=True,
+                message=to_message(stdout, stderr),
+                next_train_tag=next_train_tag,
+                docker_base_image=BASE_IMAGE,
+                export_files=export_files())
 
         finally:
             clear_data()
