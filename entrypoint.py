@@ -62,9 +62,15 @@ def finish_file():
     return os.path.join(model_dir(), 'FINISH')
 
 
+# File containing the current number of iteration
+def iteration_file():
+    return os.path.join(model_dir(), 'ITERATION')
+
+
 # List absolute paths of files that need to be exported
 def export_files():
-    return [os.path.abspath(x) for x in os.listdir(os.path.join(model_dir(), 'train_files'))]
+    d = os.path.join(model_dir(), 'train_files')
+    return [os.path.join(d, x) for x in os.listdir(d)]
 
 
 ################################################################################################
@@ -120,9 +126,23 @@ def get_next_train_tag(station_id: int):
     """
     Input: The _current_ station_id
     """
+    it_file = iteration_file()
+
+    # Init the itfile if it does not exist
+    if not os.path.exists(it_file):
+        with open(it_file, 'w') as f:
+            f.write(str(0))
+
     if os.path.isfile(finish_file()):
         return 'finish'
-    return 'station.{}'.format((station_id + 1) % NUMBER_OF_STATIONS) 
+
+    # Increase the current number of iteration
+    with open(it_file, 'r') as f:
+        iteration = int(f.readline().strip()) + 1
+    # Write the iteration back
+    with open(it_file, 'w') as f:
+        f.write(str(iteration))
+    return '{}-station.{}'.format(iteration, (station_id + 1) % NUMBER_OF_STATIONS)
 
 
 class DistributedLearningTrain(Train):
