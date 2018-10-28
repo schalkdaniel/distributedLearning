@@ -14,7 +14,7 @@ from typing import IO, List, Tuple
 from pht.process import process
 from pht.env import env_exists, from_env_without_trailing_slashes
 
-NUMBER_OF_STATIONS = 3
+NUMBER_OF_STATIONS = 2
 PHT_FILE_DOWNLOAD_SERVICE = 'PHT_FILE_DOWNLOAD_SERVICE'
 
 # The base image from which the successor images should be crated from
